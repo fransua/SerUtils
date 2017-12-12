@@ -1,5 +1,9 @@
 from itertools import izip_longest
 
+import numpy as np
+from matplotlib import pyplot as plt
+
+
 def seq_logo(seqs, title='', axe=None, quality=1, plot=True, ylim=(0, 2), lwmodif=1.25,
              errorbar=True, savefig=None):
     """
