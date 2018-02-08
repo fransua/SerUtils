@@ -28,50 +28,59 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95):
       E.g.: "A*x^B+C*x" constants in upper-case.
     :params None df: polynomial degree for the fit
 
-    :returns: an array with the confidence values to add/substract, another
+    :returns: an array with the confidence values to add/subtract, another
        with prediction values, an array with the fitted x values, an array with
        the fitted y values and the scipy.poly1d object, the R-square value of
-       the fit.
+       the fit, and a latex formatted string representing the formula with
+       fitted values.
 
     Example:
     --------
 
     ```
-        # fake data
-        size = 50
-        x = [i+(2*random()+.5)**4 for i in xrange(size)]
-        y = [np.log((1.+i))+np.log(1+i**(float(i+1)/(random()*20+i))) for i in xrange(size)]
-        x = np.array(x)
-        y = np.array(y)
+    from random import random
 
-        func_string = "A^(x*B)+C"
-        # or
-        func_string = "A*x^3+ B*x^2+C*x+D"
+    from matplotlib.patches import Rectangle
+    from matplotlib import pyplot as plt
+    import numpy as np
 
-        confs, preds, p_x, p_y, z, r2 = fit_with_uncertainty(x, y, func_string)
-        # plot sample data
-        dots = plt.plot(x, y, 'o', mec='none', color='red', label='Sample observations', alpha=.8)
+    from serutils.stats.correlate import fit_with_uncertainty
 
-        # plot line of best fit
-        fit_line = plt.plot(p_x, p_y,color= 'darkgreen', lw=2, label='Regression line')
 
-        # plot confidence limits
-        plt.fill_between(p_x, p_y + confs, p_y - confs, color='darkgreen', alpha=0.3)
-        plt.fill_between(p_x, p_y - preds, p_y + preds, color='orangered', alpha=0.2)
+    # fake data
+    size = 50
+    x = [i+(2*random()+.5)**4 for i in xrange(size)]
+    y = [np.log((1.+i))+np.log(1+i**(float(i+1)/(random()*20+i))) for i in xrange(size)]
+    x = np.array(x)
+    y = np.array(y)
 
-        p1 = Rectangle((0, 0), 1, 1, fc="darkgreen", alpha=.3)
-        p2 = Rectangle((0, 0), 1, 1, fc="orangered", alpha=.2)
-        plt.legend(dots + fit_line + [p1, p2],
-                   ['almost random dots',
-                    'Fit ($R^2=%.3f$):\ny = $%s$' % (r2,
-                                        re.sub('\^(\([^)(]+\))', '^{\\1}',
-                                        re.sub('\^([0-9.]+)', '^{\\1}',
-                                               func_restring.replace('np.', '') % tuple(
-                                        ["%.2g" % i for i in z]))).replace('*','\\times ')),
-                        '95% Confidence band',
-                        '95% Prediction band'], loc='upper left', frameon=False, bbox_to_anchor=[1,1])
+    func_string = "A^(x*B)+C"
+    # or
+    func_string = "A*x^3+ B*x^2+C*x+D"
 
-        plt.xlim((min(x), max(x)))
+    confs, preds, p_x, p_y, z, r2, formula = fit_with_uncertainty(x, y, func_string)
+    # plot sample data
+    dots = plt.plot(x, y, 'o', mec='none', color='red', label='Sample observations', alpha=.8)
+
+    # plot line of best fit
+    fit_line = plt.plot(p_x, p_y,color= 'darkgreen', lw=2, label='Regression line')
+
+    # plot confidence limits
+    plt.fill_between(p_x, p_y + confs, p_y - confs, color='darkgreen', alpha=0.3)
+    plt.fill_between(p_x, p_y - preds, p_y + preds, color='orangered', alpha=0.2)
+
+    p1 = Rectangle((0, 0), 1, 1, fc="darkgreen", alpha=.3)
+    p2 = Rectangle((0, 0), 1, 1, fc="orangered", alpha=.2)
+    plt.legend(dots + fit_line + [p1, p2],
+               ['almost random dots',
+                'Fit ($R^2=%.3f$):\ny = $%s$' % (r2, formula),
+                '95% Confidence band',
+                '95% Prediction band'],
+               loc='upper left', frameon=False, bbox_to_anchor=[1,1])
+
+    plt.xlim((min(x), max(x)))
+    plt.subplots_adjust(right=0.65)
+    plt.show()
     ```
 
     """
@@ -134,4 +143,11 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95):
     # now predict y based on test x-values
     p_y = func(p_x, *z)
 
-    return confs, preds, p_x, p_y, z, r2
+    formula = re.sub('\^(\([^)(]+\))', '^{\\1}',
+                     re.sub('\^([0-9.]+)', '^{\\1}',
+                            func_restring.replace('np.', '') % tuple(
+                                ["%.2g" % i for i in z])))
+    formula = formula.replace('*','').replace('+ -', '-')
+    formula = re.sub('e([-+][0-9]+)', 'e^{\\1}', formula)
+
+    return confs, preds, p_x, p_y, z, r2, formula
