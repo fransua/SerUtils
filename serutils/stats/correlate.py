@@ -13,7 +13,8 @@ from scipy.stats import t as t_distr
 from scipy.optimize import curve_fit
 
 
-def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95):
+def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95,
+                         x_range=(None, None), precision=100):
     """
     Calculates the confidence and prediction band of the polynomial regression
     model at the desired confidence level.
@@ -27,6 +28,8 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95):
     :params "A*x+B" func_string: a string representing the function to optimize.
       E.g.: "A*x^B+C*x" constants in upper-case.
     :params None df: polynomial degree for the fit
+    :param None x_range: range in X in which to compute the fit.
+    :param 100 precision: number of points used for curve fitting.
 
     :returns: an array with the confidence values to add/subtract, another
        with prediction values, an array with the fitted x values, an array with
@@ -106,13 +109,14 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95):
 
     # fit a curve to the data using a least squares of "df" order polynomial fit
     z, covariance = curve_fit(func, x, y, [1. for _ in xrange(df)])
-    # predict y values of origional data using the fit
+    # predict y values of original data using the fit
     p_y = func(x, *z)
 
     # create series of new test x values to predict for
-    p_x = np.linspace(min(x), max(x), 100)
+    p_x = np.linspace(min(x) if x_range[0] is None else x_range[0],
+                      max(x) if x_range[1] is None else x_range[1], precision)
 
-    # number of samples in origional fit
+    # number of samples in original fit
     n = x.size
     # alpha 1 minus the wanted probability
     alpha = 1. - conf
@@ -147,7 +151,7 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95):
                      re.sub('\^([0-9.]+)', '^{\\1}',
                             func_restring.replace('np.', '') % tuple(
                                 ["%.2g" % i for i in z])))
-    formula = formula.replace('*','').replace('+ -', '-')
+    formula = re.sub('\+ *-', '-', formula.replace('*',''))
     formula = re.sub('e([-+][0-9]+)', 'e^{\\1}', formula)
 
     return confs, preds, p_x, p_y, z, r2, formula
