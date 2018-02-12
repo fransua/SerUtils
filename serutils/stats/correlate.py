@@ -9,12 +9,14 @@ import re
 
 import numpy as np
 
+from scipy import odr
 from scipy.stats import t as t_distr
 from scipy.optimize import curve_fit
 
 
 def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95,
-                         x_range=(None, None), precision=100):
+                         use_odr=False, x_range=(None, None), precision=100,
+                         **kwargs):
     """
     Calculates the confidence and prediction band of the polynomial regression
     model at the desired confidence level.
@@ -30,6 +32,10 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95,
     :params None df: polynomial degree for the fit
     :param None x_range: range in X in which to compute the fit.
     :param 100 precision: number of points used for curve fitting.
+    :param False use_odr: if True, uses orthogonal distance regression
+       (scipy.ODR), to fit the input function. Returned confidence interval is
+       based on the prediction errors of betas, and is to be applied on X and Y\
+       axis.
 
     :returns: an array with the confidence values to add/subtract, another
        with prediction values, an array with the fitted x values, an array with
@@ -92,7 +98,12 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95,
 
     df = df or len(re.findall(recomp, func_string))
 
+    if use_odr:
+        swap_args = True
+
     def func(x, *args):
+        if swap_args:
+            args, x = tuple(x), np.array(args)
         cmd = "zzz = " + func_restring.replace('^', '**') % (args)
         exec(cmd) in globals(), locals()
         #print cmd
@@ -107,8 +118,19 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95,
     if not isinstance(y, np.ndarray):
         y = np.array(y)
 
-    # fit a curve to the data using a least squares of "df" order polynomial fit
-    z, covariance = curve_fit(func, x, y, [1. for _ in xrange(df)])
+    if use_odr:
+        # Fit using orthogonal distance
+        quad_model = odr.Model(func)
+        data = odr.RealData(x, y)
+        odr_obj = odr.ODR(data, quad_model, beta0=[1. for _ in xrange(df)])
+        out = odr_obj.run()
+        z = out.beta
+        perr = out.sd_beta
+    else:
+        # fit a curve to the data using a least squares of "df" order polynomial fit
+        z, covariance = curve_fit(func, x, y, [1. for _ in xrange(df)], **kwargs)
+    # function back to normal
+    swap_args = False
     # predict y values of original data using the fit
     p_y = func(x, *z)
 
@@ -136,7 +158,10 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95,
     # relative individual deviation
     sdi_sd = sdi / sd
 
-    confs = t * np.sqrt(mse * (      1.0 / n + sdi_sd))
+    if use_odr:
+        confs = func(p_x, *perr)
+    else:
+        confs = t * np.sqrt(mse * (      1.0 / n + sdi_sd))
     preds = t * np.sqrt(mse * (1.0 + 1.0 / n + sdi_sd))
 
     # calculate R-square
