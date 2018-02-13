@@ -157,10 +157,10 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95,
     # relative individual deviation
     sdi_sd = sdi / sd
 
-    if use_odr:
-        confs = func(p_x, *perr)
-    else:
-        confs = t * np.sqrt(mse * (      1.0 / n + sdi_sd))
+    # if use_odr:
+    #     confs = func(p_x, *perr)
+    # else:
+    confs = t * np.sqrt(mse * (      1.0 / n + sdi_sd))
     preds = t * np.sqrt(mse * (1.0 + 1.0 / n + sdi_sd))
 
     # calculate R-square
