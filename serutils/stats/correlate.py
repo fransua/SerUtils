@@ -98,8 +98,7 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95,
 
     df = df or len(re.findall(recomp, func_string))
 
-    if use_odr:
-        swap_args = True
+    swap_args = use_odr
 
     def func(x, *args):
         if swap_args:
