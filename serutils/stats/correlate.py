@@ -66,18 +66,19 @@ def get_confidence(x, y, p_y, new_x, df, conf=0.95):
     return confs, preds, r2
 
 
-def build_func(func_string, use_odr=False, df=None):
+def build_func(func_string, df=None):
     recomp = re.compile("[A-Z]")
     func_restring = re.sub(recomp, "%s", func_string)
 
     df = len(re.findall(recomp, func_string)) if df is None else df
 
     def func(x, *args):
-        if use_odr:
+        if USE_ODR:
             args, x = tuple(x), np.array(args)
         cmd = "zzz = " + func_restring.replace('^', '**') % (args)
+
         exec(cmd) in globals(), locals()
-        #print cmd
+
         try:
             return np.lib.asarray_chkfinite(zzz)
         except:
@@ -86,7 +87,7 @@ def build_func(func_string, use_odr=False, df=None):
     return func, df
 
 
-def fit_function(x, y, func, df=None, use_odr=False, **kwargs):
+def fit_function(x, y, func, df=None, **kwargs):
     """
     Fit a given function using input data points
 
@@ -103,7 +104,7 @@ def fit_function(x, y, func, df=None, use_odr=False, **kwargs):
     if not isinstance(y, np.ndarray):
         y = np.array(y)
 
-    if use_odr:
+    if USE_ODR:
         # Fit using orthogonal distance
         quad_model = odr.Model(func)
         data = odr.RealData(x, y)
@@ -198,17 +199,25 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95,
     ```
 
     """
+    if not isinstance(x, np.ndarray):
+        x = np.array(x)
+    if not isinstance(y, np.ndarray):
+        y = np.array(y)
+
+    global USE_ODR
+    USE_ODR = use_odr
     # build function
-    func, df = build_func(func_string, use_odr=use_odr, df=df)
+    func, df = build_func(func_string, df=df)
 
     # find optimal parameters of the funciton
-    z = fit_function(x, y, func=func, df=df, use_odr=use_odr, **kwargs)
+    z = fit_function(x, y, func=func, df=df, USE_ODR=USE_ODR, **kwargs)
 
     # create series of new test x values to predict for
     new_x = np.linspace(min(x) if x_range[0] is None else x_range[0],
                       max(x) if x_range[1] is None else x_range[1], precision)
 
     # now predict y based on test x-values
+    USE_ODR=False
     new_y = func(new_x, *z)
 
     # estimate confidence and prediction bands
