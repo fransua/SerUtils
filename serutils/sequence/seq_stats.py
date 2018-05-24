@@ -142,11 +142,13 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
         fig = plt.figure(figsize=(len(seq_count) * 0.15 * quality, 1.75 * quality))
         axe = fig.add_subplot(111)
 
-    draw_letter_functions = {'A':A, 'T': T, 'G': G, 'C': C, 'N': N}
+    # draw_letter_functions = {'A':A, 'T': T, 'G': G, 'C': C, 'N': N}
+    draw_letter_functions = {'A':A, 'T': T, 'G': G, 'C': C}
+    nchars = 4.  # nucleotides
 
     if errorbar:
         # get_err = lambda x: (1. / np.log(2) * (4 - 1.) / (2. * col_count[x]))
-        trans = 1. / np.log(2) * (4 - 1.) / 2.
+        trans = 1. / np.log(2) * (nchars - 1.) / 2.
         get_err = lambda x: trans / col_count[x]
     else:
         get_err = lambda x: 0
@@ -154,11 +156,12 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
     for npos, position in enumerate(seq_count):
         offset = h = 0
         en = get_err(npos)
-        ri = sum(fi * np.log2(fi) for fi in position.values() if fi) - en
+        hi = - sum(fi * np.log2(fi) for fi in position.values() if fi)
+        ri = np.log2(nchars) - (hi + en)
         for letter, f in sorted(position.iteritems(), key=lambda x: x[1]):
             if not f:
                 continue
-            h = f * (2. + ri)
+            h =  f * ri
             x = npos + xoffset
             y = offset
             draw_letter_functions[letter](x, y, h)
@@ -191,4 +194,5 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
     axe.set_title(title)
     if savefig:
         plt.savefig(savefig, format=savefig.split('.')[-1])
+        plt.close('all')
     return seq_count
