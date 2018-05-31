@@ -138,7 +138,9 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
             h -= yoffset
         axe.plot([x, x, x + letterw, x + letterw], [y, y + h, y, y + h], color='grey', lw=lw(h))
 
+    given_axe = True
     if not axe:
+        given_axe = False
         fig = plt.figure(figsize=(len(seq_count) * 0.15 * quality, 1.75 * quality))
         axe = fig.add_subplot(111)
 
@@ -164,7 +166,7 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
             h =  f * ri
             x = npos + xoffset
             y = offset
-            draw_letter_functions[letter](x, y, h)
+            draw_letter_functions.get(letter, lambda _, __, ___: None)(x, y, h)
             offset += h
         if errorbar:  # only over last letter
             plt.plot([x + halfw, x + halfw], [y + h + en, max(y + h - en, 0)],
@@ -182,14 +184,14 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
         axe.text(-0.5, ylim[0] + (ylim[1] - ylim[0]) / 2. * i,
                  str(ylim[0] + (ylim[1] - ylim[0]) / 2. * i),
                  va='center', ha='right', size=6 * quality)
-    axe.text(ylim[0] - 1.5, 1, 'bits', va='center', ha='right', rotation=90,
+    axe.text(ylim[0] - 0.5 - len(seq_count) / 50., 1, 'bits', va='center', ha='right', rotation=90,
              size=9 * quality)
     axe.plot([-0.4, -0.1], [(ylim[1] - ylim[0]) / 2.] * 2, color='k')
     for i in xrange(1, npos + 2):
         axe.text(i - 0.5, ylim[0] - 0.05, str(i), va='top', ha='center',
                  size=6 * quality, rotation=90)
     _ = axe.set_xlim(-1, npos + 1.)
-    _ = axe.set_ylim(ylim[0] - .5, ylim[1] + 3 * yoffset)
+    _ = axe.set_ylim(ylim[0] - (0 if given_axe else 0.5), ylim[1] + 3 * yoffset)
     # title
     axe.set_title(title)
     if savefig:
