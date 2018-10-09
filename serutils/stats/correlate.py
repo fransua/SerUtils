@@ -104,17 +104,21 @@ def fit_function(x, y, func, df=None, **kwargs):
     if not isinstance(y, np.ndarray):
         y = np.array(y)
 
+    # fit a curve to the data using a least squares of "df" order polynomial fit
+    global USE_ODR
+    use_odr = USE_ODR
+    USE_ODR = False  # need to be false for curve_fit to work
+    z, _ = curve_fit(func, x, y, [1. for _ in xrange(df)],
+                     **dict((k, i) for k, i in kwargs.iteritems() if k != 'USE_ODR'))
+    USE_ODR = use_odr
     if USE_ODR:
         # Fit using orthogonal distance
         quad_model = odr.Model(func)
-        data = odr.RealData(x, y)
-        odr_obj = odr.ODR(data, quad_model, beta0=[1. for _ in xrange(df)])
+        data = odr.RealData(x, y, sy=min(1 / np.var(x), 1 / np.var(y)))  # rescale in case X and Y have different ranges
+        odr_obj = odr.ODR(data, quad_model, beta0=z)  # use previous fit as starting point
         out = odr_obj.run()
         z = out.beta
         _ = out.sd_beta
-    else:
-        # fit a curve to the data using a least squares of "df" order polynomial fit
-        z, _ = curve_fit(func, x, y, [1. for _ in xrange(df)], **kwargs)
 
     return z
 
