@@ -14,7 +14,7 @@ from scipy.stats import t as t_distr
 from scipy.optimize import curve_fit
 
 
-def get_confidence(x, y, p_y, new_x, df, conf=0.95):
+def get_confidence(x, y, p_y, new_x, df, func, z, conf=0.95):
     """
     Computes prediction band and confidence band from distribution and it's fit
 
@@ -59,8 +59,7 @@ def get_confidence(x, y, p_y, new_x, df, conf=0.95):
     preds = t * np.sqrt(mse * (1.0 + 1.0 / n + sdi_sd))
 
     # calculate R-square
-    mean_y = np.mean(y)
-    sst = sum((y - mean_y)**2)
+    sst = sum((y - np.mean(y))**2)
     r2 = 1 - sse / sst
 
     return confs, preds, r2
@@ -114,11 +113,13 @@ def fit_function(x, y, func, df=None, **kwargs):
     if USE_ODR:
         # Fit using orthogonal distance
         quad_model = odr.Model(func)
-        data = odr.RealData(x, y, sy=min(1 / np.var(x), 1 / np.var(y)))  # rescale in case X and Y have different ranges
+        data = odr.RealData(x, y, sy=np.var(x), sx=np.var(y))  # rescale in case X and Y have different ranges
         odr_obj = odr.ODR(data, quad_model, beta0=z)  # use previous fit as starting point
         out = odr_obj.run()
         z = out.beta
-        _ = out.sd_beta
+        # print out.delta
+        # print out.res_var
+        # out.pprint()
 
     return z
 
@@ -226,7 +227,8 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95,
 
     # estimate confidence and prediction bands
     p_y = func(x, *z)
-    confs, preds, r2 = get_confidence(x, y, p_y, new_x, df, conf=conf)
+    USE_ODR=True
+    confs, preds, r2 = get_confidence(x, y, p_y, new_x, df, func, z, conf=conf)
 
     return new_x, new_y, z, confs, preds, r2
 
