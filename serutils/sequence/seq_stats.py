@@ -1,7 +1,51 @@
-from itertools import izip_longest
+"""
+"""
+
+try:
+    from itertools import zip_longest
+except ImportError:
+    from itertools import izip_longest as zip_longest
+from random import random, seed
+from bisect import bisect_right as bisect
 
 import numpy as np
 from matplotlib import pyplot as plt
+
+
+def generate_random_genomic_positions(coordinates=None, sequences=None,
+                                      num=1, seed_num=1):
+    seed(seed_num)
+    if not coordinates:
+        if sequences:
+            coordinates = dict((c, len(sequences[c])) for c in sequences)
+        else:
+            raise Exception('ERROR: at least one of coordinates or sequences should be given!!')
+
+    total_length = sum(v for v in coordinates.values())
+
+    positions = [0]
+    chroms = []
+    total = 0
+    for c in sorted(coordinates.keys(), key=lambda x: coordinates[x]):
+        total += coordinates[c]
+        positions.append(total)
+        chroms.append(c)
+
+    if sequences:
+        count = 0
+        while count < num:
+            pos = int(random() * total_length)
+            idx = bisect(positions, pos) - 1
+            c, pos = chroms[idx], pos - positions[idx]
+            if sequences[c][pos] == 'N':
+                continue
+            yield (c, pos + 1)
+            count += 1
+    else:
+        for _ in range(num):
+            pos = int(random() * total_length)
+            idx = bisect(positions, pos) - 1
+            yield (chroms[idx], pos - positions[idx] + 1)
 
 
 def nucleotide_content(seqs, letters=('A', 'T', 'G', 'C', 'N'), remove_gap_only=True, min_count=1):
@@ -14,7 +58,7 @@ def nucleotide_content(seqs, letters=('A', 'T', 'G', 'C', 'N'), remove_gap_only=
     seq_count = []
     col_count = []
     lencol = float(len(seqs))
-    for col in izip_longest(*seqs, fillvalue='N'):
+    for col in zip_longest(*seqs, fillvalue='N'):
         nchars = lencol - col.count('-')
         if nchars < min_count:
             if not remove_gap_only:
@@ -27,7 +71,7 @@ def nucleotide_content(seqs, letters=('A', 'T', 'G', 'C', 'N'), remove_gap_only=
 
 
 def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
-             nseq=None, title='', axe=None, quality=1, plot=True, ylim=(0, 2),
+             nseq=None, title='', axe=None, quality=1, plot=True, ylim=(0, 2), alpha=1,
              lwmodif=1.25, remove_gap_only=True, min_count=1, errorbar=True, savefig=None):
     """
     Draw a sequence motif according to an input list of sequences,
@@ -67,7 +111,16 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
     qlmodif = lwmodif * quality / 5.
     halfw   = letterw / 2.
 
-    if not seq_count and seqs:
+    if isinstance(seqs, list):
+        no_seqs = False if seqs else True
+    elif seqs is None:
+        no_seqs = seqs.empty
+    elif len(seqs) == 0:
+        no_seqs = seqs.empty
+    else:
+        raise Exception('ERROR: what is seqs?')
+
+    if seq_count is None and not no_seqs:
         seq_count, col_count = nucleotide_content(
             seqs, letters=letters, remove_gap_only=remove_gap_only,
             min_count=min_count)
@@ -81,7 +134,7 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
     np.seterr(divide='ignore')
 
     if nseq is None:
-        if seqs:
+        if not no_seqs:
             nseq = len(seqs)
         elif errorbar:
             raise Exception("ERROR: can't display error bar without sample "
@@ -94,17 +147,17 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
             y += yoffset
             h -= yoffset
         lwh = lw(h)
-        axe.plot([x, x + halfw, x + letterw ], [y, y + h, y], color='green', lw=lwh)
+        axe.plot([x, x + halfw, x + letterw ], [y, y + h, y], color='green', alpha=alpha, lw=lwh)
         axe.plot([x + letterw * 1 / 4, x + letterw * 3 / 4], [y + h  * 1 / 3] * 2,
-                 color='green', lw=lwh)
+                 color='green', alpha=alpha, lw=lwh)
 
     def T(x, y, h):
         if yoffset < h:
             y += yoffset
             h -= yoffset
         lwh = lw(h)
-        axe.plot([x + halfw ] * 2, [y, y + h] , color='red', lw=lwh)
-        axe.plot([x, x + letterw]  , [y + h] * 2, color='red', lw=lwh)
+        axe.plot([x + halfw ] * 2, [y, y + h] , color='red', alpha=alpha, lw=lwh)
+        axe.plot([x, x + letterw]  , [y + h] * 2, color='red', alpha=alpha, lw=lwh)
 
     Gcircle = np.linspace(np.pi * 0.25, np.pi * 1.9, 20 * quality)
     xG = np.cos(Gcircle)
@@ -117,10 +170,10 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
         xGw = x + xG * halfw + halfw
         yGh = y + yG * halfh + halfh
         lwh = lw(h)
-        axe.plot(xGw, yGh, color='orange', lw=lwh)
+        axe.plot(xGw, yGh, color='orange', alpha=alpha, lw=lwh)
         axe.plot([xGw[-1]          , xGw[-1]           , xGw[-1] - letterw * 0.4 ],
                  [yGh[-1] - h * 0.3, yGh[-1] + h * 0.05, yGh[-1] + h       * 0.05],
-                color='orange', lw=lwh)
+                color='orange', alpha=alpha, lw=lwh)
 
     Ccircle = np.linspace(np.pi * 0.2, np.pi * 1.8, 20 * quality)
     xC = np.cos(Ccircle)
@@ -130,13 +183,13 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
             y += yoffset
             h -= yoffset
         axe.plot(x + xC * halfw + halfw,
-                 y + yC * h / 2.+ h / 2., color='blue', lw=lw(h))
+                 y + yC * h / 2.+ h / 2., color='blue', alpha=alpha, lw=lw(h))
 
     def N(x, y, h):
         if yoffset < h:
             y += yoffset
             h -= yoffset
-        axe.plot([x, x, x + letterw, x + letterw], [y, y + h, y, y + h], color='grey', lw=lw(h))
+        axe.plot([x, x, x + letterw, x + letterw], [y, y + h, y, y + h], color='grey', alpha=alpha, lw=lw(h))
 
     given_axe = True
     if not axe:
@@ -160,7 +213,7 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
         en = get_err(npos)
         hi = - sum(fi * np.log2(fi) for fi in position.values() if fi)
         ri = np.log2(nchars) - (hi + en)
-        for letter, f in sorted(position.iteritems(), key=lambda x: x[1]):
+        for letter, f in sorted(position.items(), key=lambda x: x[1]):
             if not f:
                 continue
             h =  f * ri
@@ -170,30 +223,30 @@ def seq_logo(seqs=None, seq_count=None, letters=('A', 'T', 'G', 'C', 'N'),
             offset += h
         if errorbar:  # only over last letter
             plt.plot([x + halfw, x + halfw], [y + h + en, max(y + h - en, 0)],
-                     color='grey')
+                     alpha=alpha, color='grey')
             plt.plot([x + halfw - 0.1, x + halfw + 0.1], [y + h + en, y + h + en],
-                     color='grey')
+                     alpha=alpha, color='grey')
             if y + h - en > 0:
                 plt.plot([x + halfw - 0.1, x + halfw + 0.1], [y + h - en] * 2,
-                         color='grey')
+                         alpha=alpha, color='grey')
 
     # axes
     axe.axis('off')
-    axe.plot([-0.4, -0.1, -0.1, -0.4], [ylim[0], ylim[0], ylim[1], ylim[1]], color='k')
+    axe.plot([-0.4, -0.1, -0.1, -0.4], [ylim[0], ylim[0], ylim[1], ylim[1]], alpha=alpha, color='k')
     for i in range(3):
         axe.text(-0.5, ylim[0] + (ylim[1] - ylim[0]) / 2. * i,
                  str(ylim[0] + (ylim[1] - ylim[0]) / 2. * i),
-                 va='center', ha='right', size=6 * quality)
+                 va='center', ha='right', size=6 * quality, alpha=alpha)
     axe.text(ylim[0] - 0.5 - len(seq_count) / 50., 1, 'bits', va='center', ha='right', rotation=90,
-             size=9 * quality)
-    axe.plot([-0.4, -0.1], [(ylim[1] - ylim[0]) / 2.] * 2, color='k')
-    for i in xrange(1, npos + 2):
+             size=9 * quality, alpha=alpha)
+    axe.plot([-0.4, -0.1], [(ylim[1] - ylim[0]) / 2.] * 2, alpha=alpha, color='k')
+    for i in range(1, npos + 2):
         axe.text(i - 0.5, ylim[0] - 0.05, str(i), va='top', ha='center',
-                 size=6 * quality, rotation=90)
+                 size=6 * quality, rotation=90, alpha=alpha)
     _ = axe.set_xlim(-1, npos + 1.)
     _ = axe.set_ylim(ylim[0] - (0 if given_axe else 0.5), ylim[1] + 3 * yoffset)
     # title
-    axe.set_title(title)
+    axe.set_title(title, alpha=alpha)
     if savefig:
         plt.savefig(savefig, format=savefig.split('.')[-1])
         plt.close('all')

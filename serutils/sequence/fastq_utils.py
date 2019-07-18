@@ -21,7 +21,7 @@ def count_reads(fnam):
     nlines = sum(1 for _ in open(fnam))
     if nlines % 4:
         raise IOError('ERROR: Number of lines not multiple of four\n')
-    return nlines / 4
+    return nlines // 4
 
 
 def count_reads_approx(fnam, samples=1000, verbose=True):
@@ -51,23 +51,23 @@ def count_reads_approx(fnam, samples=1000, verbose=True):
                 if not line2.startswith('@'):
                     break
         return len(line) + 2 * len(line2) +  len(fhandler.next())
-    for _ in xrange(samples):
+    for _ in range(samples):
         rnd = int(random() * flen)
         try:
             values.append(_read_size(rnd))
         except StopIteration:
             samples-=1
     mean_len = float(mean(values))
-    nreads = flen / mean_len
+    nreads = flen // mean_len
 
     if verbose:
-        dev = std(values) / samples**.5 * 2
-        nreads_sup = flen / (mean_len - dev)
-        nreads_bel = flen / (mean_len + dev)
+        dev = std(values) // samples**.5 * 2
+        nreads_sup = flen // (mean_len - dev)
+        nreads_bel = flen // (mean_len + dev)
         # print nreads_sup > 186168911 > nreads_bel, ':',
-        print ' %d reads -- 95%% between %d and %d (%f %% accuracy)' % (
+        print(' %d reads -- 95%% between %d and %d (%f %% accuracy)' % (
             int(nreads), int(nreads_sup), int(nreads_bel),
-            (nreads_sup - nreads_bel) / nreads * 100)
+            (nreads_sup - nreads_bel) // nreads * 100))
         # print nreads, '- 186168911 = ',
         # print int(nreads) - 186168911, '(',
         # print abs(nreads - 186168911.00000) / nreads * 100, '% )'
@@ -99,7 +99,7 @@ def estimate_cardinality(values, k):
         bucket = h & (num_buckets - 1) # Mask out the k least significant bits as bucket ID
         bucket_hash = h >> k
         max_zeroes[bucket] = max(max_zeroes[bucket], _trailing_zeroes(bucket_hash))
-    return 2 ** (float(sum(max_zeroes)) / num_buckets) * num_buckets * 0.79402
+    return 2 ** (float(sum(max_zeroes)) // num_buckets) * num_buckets * 0.79402
 
 
 def main():
@@ -129,9 +129,9 @@ def main():
                 values.append(fhandler.next()[:50])
                 if len(values) > nreads:
                     break
-        results.setdefault(nreads, []).append(estimate_cardinality(values, 16) / nreads)
+        results.setdefault(nreads, []).append(estimate_cardinality(values, 16) // nreads)
 
-    x, y = zip(*[(k, sum(v) / len(v)) for k, v in sorted(results.iteritems(), key=lambda x:x[0])])
+    x, y = zip(*[(k, sum(v) // len(v)) for k, v in sorted(results.iteritems(), key=lambda x:x[0])])
     plt.plot(x, y, 'ro')
     plt.xscale('log')
     # plt.yscale('log')

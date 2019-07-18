@@ -15,13 +15,15 @@ import tarfile
 from subprocess import Popen, PIPE
 from multiprocessing import cpu_count
 
+
 def check_pik(path):
     with open(path, "r") as f:
-        f.seek (0, 2)                # Seek @ EOF
+        f.seek(0, 2)                # Seek @ EOF
         fsize = f.tell()             # Get Size
-        f.seek (max (fsize-2, 0), 0) # Set pos @ last n chars
+        f.seek(max(fsize-2, 0), 0) # Set pos @ last n chars
         key = f.read()               # Read to end
     return key == 's.'
+
 
 def magic_open(filename, verbose=False, cpus=None):
     """
@@ -31,11 +33,11 @@ def magic_open(filename, verbose=False, cpus=None):
 
     :returns: opened file ready to be iterated
     """
-    if isinstance(filename, str) or isinstance(filename, unicode):
-        fhandler = file(filename, 'rb')
+    if isinstance(filename, str):
+        fhandler = open(filename, 'rb')
         inputpath = True
         if tarfile.is_tarfile(filename):
-            print 'tar'
+            print('tar')
             thandler = tarfile.open(filename)
             if len(thandler.members) != 1:
                 raise NotImplementedError(
@@ -48,6 +50,8 @@ def magic_open(filename, verbose=False, cpus=None):
         start_of_file = ''
     if filename.endswith('.dsrc'):
         dsrc_binary = which('dsrc')
+        if verbose:
+            print('dsrc format detected using {}'.format(dsrc_binary))
         if not dsrc_binary:
             raise Exception('\n\nERROR: DSRC binary not found, install it from:'
                             '\nhttps://github.com/lrog/dsrc/releases')
@@ -59,7 +63,7 @@ def magic_open(filename, verbose=False, cpus=None):
         fhandler.seek(0)
     if start_of_file.startswith('\x50\x4b\x03\x04'):
         if verbose:
-            print 'zip'
+            print('zip')
         zhandler = zipfile.ZipFile(fhandler)
         if len(zhandler.NameToInfo) != 1:
             raise NotImplementedError(
@@ -67,15 +71,15 @@ def magic_open(filename, verbose=False, cpus=None):
         return zhandler.open(zhandler.NameToInfo.keys()[0])
     if start_of_file.startswith('\x42\x5a\x68'):
         if verbose:
-            print 'bz2'
+            print('bz2')
         fhandler.close()
         return bz2.BZ2File(filename)
     if start_of_file.startswith('\x1f\x8b\x08'):
         if verbose:
-            print 'gz'
+            print('gz')
         return gzip.GzipFile(fileobj=fhandler)
     if verbose:
-        print 'text'
+        print('text')
     return fhandler
 
 
