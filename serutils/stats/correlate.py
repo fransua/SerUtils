@@ -75,8 +75,9 @@ def build_func(func_string, df=None):
         if USE_ODR:
             args, x = tuple(x), np.array(args)
         cmd = "zzz = " + func_restring.replace('^', '**') % (args)
-
-        exec(cmd) in globals(), locals()
+        ll = locals()
+        exec(cmd, globals(), ll)
+        zzz = ll['zzz']
 
         try:
             return np.lib.asarray_chkfinite(zzz)
@@ -107,8 +108,8 @@ def fit_function(x, y, func, df=None, **kwargs):
     global USE_ODR
     use_odr = USE_ODR
     USE_ODR = False  # need to be false for curve_fit to work
-    z, _ = curve_fit(func, x, y, [1. for _ in xrange(df)],
-                     **dict((k, i) for k, i in kwargs.iteritems() if k != 'USE_ODR'))
+    z, _ = curve_fit(func, x, y, [1. for _ in range(df)],
+                     **dict((k, i) for k, i in kwargs.items() if k != 'USE_ODR'))
     USE_ODR = use_odr
     if USE_ODR:
         # Fit using orthogonal distance
@@ -167,8 +168,8 @@ def fit_with_uncertainty(x, y, func_string='A*x+B', df=None, conf=0.95,
 
     # fake data
     size = 50
-    x = [i+(2*random()+.5)**4 for i in xrange(size)]
-    y = [np.log((1.+i))+np.log(1+i**(float(i+1)/(random()*20+i))) for i in xrange(size)]
+    x = [i+(2*random()+.5)**4 for i in range(size)]
+    y = [np.log((1.+i))+np.log(1+i**(float(i+1)/(random()*20+i))) for i in range(size)]
     x = np.array(x)
     y = np.array(y)
 
