@@ -47,8 +47,8 @@ class TestFisim(unittest.TestCase):
         self.assertAlmostEqual(0.2, fisim)
 
     def test_align_fisim(self):
-        fisim1 = get_fisim(MAT1, MAT2)
-        fisim2 = get_fisim(MAT1, MAT2, count_unaligned=True)
+        fisim1, i = get_fisim(MAT1, MAT2)
+        fisim2, j = get_fisim(MAT1, MAT2, count_unaligned=True)
         self.assertAlmostEqual(0.8688994, fisim1)
         self.assertAlmostEqual(0.8241095, fisim2)
 
