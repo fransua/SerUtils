@@ -2,6 +2,8 @@
 """
 import numpy as np
 from scipy.optimize import newton
+from operator import mul
+from functools import reduce
 
 
 def _single_fisim(C1, C2):
@@ -14,7 +16,7 @@ def _single_fisim(C1, C2):
                           for i in range(4)], reverse=True))
     mu = list(mu)
 
-    x = newton(_func2, x0=-1, args=(mu,), maxiter=1000)
+    x = newton(_func2, x0=-1, args=(mu,))
 
     muf = mu[0]
     for i in range(1, 4):
@@ -26,7 +28,7 @@ def _single_fisim(C1, C2):
 
 
 def _func2(x, mu):
-    return np.prod([1 + mu[i] * x for i in range(4)]) - (1 + x)
+    return reduce(mul, (1 + v * x for v in mu)) - (1 + x)
 
 
 def get_fisim(motif1, motif2, count_unaligned=False):
