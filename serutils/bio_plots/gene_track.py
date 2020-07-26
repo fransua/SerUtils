@@ -123,7 +123,7 @@ def get_text_width(txt_obj, renderer, axe):
 
 
 def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
-               extra_fig_heigth=0):
+               extra_fig_heigth=0, highlight=None):
     """
     plot genes through their exons/introns.
 
@@ -204,6 +204,7 @@ def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
         fig = axe.get_figure()
         renderer = fig.canvas.get_renderer()
 
+    highlight = set(highlight) if highlight else set()
     axe.set_xlim(beg, end)
 
     minimum = float('inf')
@@ -236,10 +237,16 @@ def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
         except ValueError:
             num = 0
         color = gene_type_color.get(genes[g]['Gene type'], 'red')
-        t = axe.text(genes[g]['exons'][0][0],
-                 num + 0.1,
-                 genes[g]['Gene name'] + ('>' if genes[g]['Strand'] == '1' else '<'),
-                     color=color, size=8)
+        if g in highlight:
+            t = axe.text(genes[g]['exons'][0][0],
+                     num + 0.1,
+                     genes[g]['Gene name'] + ('>' if genes[g]['Strand'] == '1' else '<'),
+                         color=color, size=9, weight="bold")
+        else:
+            t = axe.text(genes[g]['exons'][0][0],
+                     num + 0.1,
+                     genes[g]['Gene name'] + ('>' if genes[g]['Strand'] == '1' else '<'),
+                         color=color, size=8)
         w = get_text_width(t, renderer, axe)
         pos.append((b, max(b + w, e), num))
         for b, e in genes[g]['exons']:
