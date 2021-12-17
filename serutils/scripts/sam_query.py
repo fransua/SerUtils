@@ -3,7 +3,7 @@ import re
 from argparse     import ArgumentParser
 
 
-def find_region(query, beg_pos, end_pos, sam_handler, pattern):
+def _find_region(query, beg_pos, end_pos, sam_handler, pattern):
     new_pos = int((end_pos + beg_pos) / 2 )
     sam_handler.seek(new_pos)
     next(sam_handler)
@@ -18,14 +18,12 @@ def find_region(query, beg_pos, end_pos, sam_handler, pattern):
         beg_pos = new_pos
     else:                   # congratulations you won!!!!
         return line
-    return find_region(query, beg_pos, end_pos, sam_handler, pattern)
+    return _find_region(query, beg_pos, end_pos, sam_handler, pattern)
 
 
-def main():
-    opts = get_options()
-    pattern = re.compile(opts.pattern)
-    query = int(pattern.findall(opts.query)[0])
-    sam_handler = open(opts.sam_file)
+def find_region(query, sam_file, pattern):
+    query = int(pattern.findall(query)[0])
+    sam_handler = open(sam_file)
 
     # get start
     beg_pos = 0
@@ -37,9 +35,17 @@ def main():
         beg_pos += len_line
 
     # get end
-    end_pos = os.path.getsize(opts.sam_file)
+    end_pos = os.path.getsize(sam_file)
 
-    print(find_region(query, beg_pos, end_pos, sam_handler, pattern), end='')
+    return(_find_region(query, beg_pos, end_pos, sam_handler, pattern))
+
+def main():
+    opts = get_options()
+    pattern = re.compile(opts.pattern)
+    
+    region = find_region(opts.query, opts.sam_file, pattern)
+
+    print(region, end='')
 
 
 def get_options():
