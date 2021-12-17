@@ -20,3 +20,17 @@ def parse_fasta(f_name, verbose=True):
             continue
         genome_seq[header] += line.rstrip()
     return genome_seq
+
+
+def iterate_fasta(fasta, header_delimiter='\t'):
+    with open(fasta) as fh:
+        header = next(fh)[1:].strip().split(header_delimiter)
+        seq = ''
+        for l in fh:
+            if l.startswith('>'):
+                yield header, seq
+                header = l[1:].strip().split(header_delimiter)
+                seq = ''
+                continue
+            seq += l.strip()
+        yield header, seq

@@ -200,9 +200,11 @@ def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
         fig = plt.figure(figsize=(10, 3))
         axe = plt.subplot(111)
         renderer = fig.canvas.get_renderer()
+        input_axe = False
     else:
         fig = axe.get_figure()
         renderer = fig.canvas.get_renderer()
+        input_axe = True
 
     highlight = set(highlight) if highlight else set()
     axe.set_xlim(beg, end)
@@ -222,7 +224,7 @@ def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
                      genes[g]['exons'][-1][1] <= end],
                     key=lambda x: genes[x]['exons'][0][0]):
 
-        begs = tuple([b for b, _ in genes[g]['exons']])
+        # begs = tuple([b for b, _ in genes[g]['exons']])
         vs = sorted([b for b, _ in genes[g]['exons']] + [e for _, e in genes[g]['exons']])
         b = vs[0]
         e = vs[-1]
@@ -274,7 +276,7 @@ def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
     axe.xaxis.grid(alpha=0.3, lw=1.5)
 
     def format_xticks(tickstring, _=None):
-        tickstring = int(tickstring + beg)
+        tickstring = int(tickstring)
         return nicer(tickstring if tickstring else 1,
                      comma=',', allowed_decimals=1, sep='')
 
@@ -285,5 +287,6 @@ def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
 
     xlabel = '{}: {:,}-{:,}'.format(('' if 'chr' in crm else 'chr') + crm, beg if beg else 1, end)
     axe.set_xlabel(xlabel)
-    fig.set_figheight(0.3 + nrows / 3. + extra_fig_heigth)
+    if input_axe is None:
+        fig.set_figheight(0.3 + nrows / 3. + extra_fig_heigth)
     return nrows
