@@ -1,34 +1,32 @@
 from matplotlib import pyplot as plt
 from matplotlib.patches import Ellipse
 import numpy as np
-from scipy.optimize import minimize
-
+from scipy.optimize import dual_annealing
 
 def intersection_area(r1, r2, d):
+    if d > r1 + r2:
+        return 0
     r12 = r1**2
     r22 = r2**2
-    d2 = d**2
-    A = (r12 * np.arccos((d2 + r12 - r22) / (2 * d * r1)) + 
-         r22 * np.arccos((d2 + r22 - r12) / (2 * d * r2)) -
-         ((-d + r1 + r2) * (d + r1 - r2) * (d - r1 + r2) * (d + r1 + r2))**0.5 / 2)
+
+    if d <= abs(r2 - r1):
+        return np.pi * min(r12, r22)
+    
+    d1 = (r12 - r22 + d**2) / (d * 2)
+    d2 = d - d1
+    
+    A = (r12 * np.arccos(d1 / r1) - d1 * (r12 - d1**2)**0.5 + 
+         r22 * np.arccos(d2 / r2) - d2 * (r22 - d2**2)**0.5)
+    
     return A
 
+def optimal_intersection(d, r1, r2, i):
+    tmp_i = intersection_area(r1, r2, d)
+    return abs(i - tmp_i)
 
-def union_area(r1, r2, d):
-    isec = intersection_area(r1, r2, d)
-    return np.pi * (r1**2 + r2**2) - isec
-
-
-def optimal_jaccard_index(d, r1, r2, ji):
-    isec = intersection_area(r1, r2, d)
-    union = union_area(r1, r2, d)
-    return abs(ji - isec / union)
-
-
-def get_distance(r1, r2, ji):
-    return minimize(optimal_jaccard_index, (r1 + r2) / 2, args=(r1, r2, ji,), 
-                    bounds=([abs(r1 - r2), (r1 + r2)*0.99],),
-                    method=None).x[0]
+def get_distance(r1, r2, i):
+    return dual_annealing(optimal_intersection, args=(r1, r2, i,),
+                           bounds=[(abs(r1 - r2), (r1 + r2))]).x
 
 
 def scatter_venns(intersections, unions, sizes1, sizes2, xcoords,
@@ -89,10 +87,8 @@ def scatter_venns(intersections, unions, sizes1, sizes2, xcoords,
         # size is circle area, radius is thus square root of size over pi 
         r1 = (s1 / factor / np.pi)**0.5
         r2 = (s2 / factor / np.pi)**0.5
-        # jaccard-index to compute distance between circles for venn-diagram
-        ji = i / u
         # compute distance for venn-diagram
-        d = get_distance(r1, r2, ji) / 2 * Xratio
+        d = get_distance(r1, r2, i / factor) / 2 * Xratio
         # get metric for Y coordinate (Jaccard-index by default)
         ii = metricf(i, u, s1, s2)
         
@@ -110,27 +106,25 @@ def scatter_venns(intersections, unions, sizes1, sizes2, xcoords,
                     facecolor=colors[s1s2][1], linewidth=1, alpha=0.5, zorder=100)
         axe1.add_artist(c)
 
-    axe1.set_position((0.1, 0.1, 0.7, 0.7))
+    axe1_size = 0.6
+    axe1.set_position((0.1, 0.1, axe1_size, axe1_size))
     axe1.set_title(title)
-
     # size legend
-    axe2.set_position((0.85, 0.1, 0.15, 0.4))
-    for n, s in enumerate(scale_range if scale_range else np.percentile(list(sizes1) + list(sizes2), 
-                                                                        (1, 50, 99))):
-        y = np.linspace(ylim[0], ylim[1], 7)[n + 1]
-        r = 2 * (s / factor / np.pi)**0.5
-        e = Ellipse((-0.05, y), 
-                    r * 2 * Xratio, 
-                    r * 2,
-                    facecolor='none', edgecolor='k', 
-                    alpha=0.75, linewidth=2)
-        axe2.text(0.7, y, f'{s // 1000}K', va='center')
+    axe2_height = 0.17
+    axe2.set_position((0.71, 0.05, 0.17, axe2_height))
+    for n, s in enumerate(scale_range if scale_range else np.percentile(
+        list(sizes1) + list(sizes2), (1, 50, 99))):
+        y = np.linspace(ylim[0], ylim[1], 15)[n*5 + 1]
+        r = (axe1_size / axe2_height) * (s / factor / np.pi)**0.5
+        e = Ellipse((-0.2, y), r * Xratio * 2, r * 2,
+                    facecolor='none', edgecolor='k', linewidth=1)
+        axe2.text(0.9, y, f'{s // 1000}K', va='center')
         axe2.add_artist(e)
-    axe2.set_xlim(-0.95, 0.95)
+    axe2.set_xlim(-2.5, 2.5)
     axe2.set_ylim(ylim)
     axe2.set_axis_off()
 
-    axe2.set_title('Size scale', ha='center')
+    axe2.set_title('    Size scale', ha='center')
 
     axe1.set_xlim(xmin, xmax)
     axe1.set_ylim(ylim)
