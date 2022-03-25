@@ -110,7 +110,8 @@ def sc_coordinates(fname, reading_chunk=1000, ncells=96,
     index single-cells in FASTQ file
     
     :param fname: path to FASTQ
-    :param 1000 reading_chunk: 2 entries should be contained is this length
+    :param 1000 reading_chunk: number of bytes to read at once 
+       (2 entries should be contained is this length)
     :param 96 ncells: number of cells sequenced and represented in the FASTQ
     :param 1000 sub_sample_size: wanted number of entries per cell
     :param regex: to identify cell identifier in read-ID
@@ -178,7 +179,8 @@ def subsample_SC(fname, outfname, reading_chunk=1000, ncells=96, sub_sample_size
     
     :param fname: path to FASTQ
     :param outfname: path to subsampled output FASTQ
-    :param 1000 reading_chunk: 2 entries should be contained is this length
+    :param 1000 reading_chunk: number of bytes to read at once 
+       (2 entries should be contained is this length)
     :param 96 ncells: number of cells sequenced and represented in the FASTQ
     :param 1000 sub_sample_size: wanted number of entries per cell
     :param regex: to identify cell identifier in read-ID
