@@ -6,7 +6,6 @@ from subprocess                           import Popen, PIPE
 from random                               import random
 from os                                   import SEEK_END
 from re                                   import compile as re_compile, MULTILINE
-from nbformat import read
 
 from numpy                                import mean, std
 

@@ -1,4 +1,9 @@
 #! /usr/bin/env python
+"""
+Subsample single-cell FASTQ file
+
+WARNING: no random picking here, just takes the first XX entries for each single-cell
+"""
 
 from argparse import ArgumentParser
 
