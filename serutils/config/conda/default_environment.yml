@@ -1,0 +1,15 @@
+channels:
+  - bioconda
+  - conda-forge
+  - defaults
+dependencies:
+  - h5py
+  - ipykernel
+  - ipython
+  - jupyter
+  - matplotlib
+  - scipy
+  - networkx
+  - numpy
+  - pandas
+  - statsmodels

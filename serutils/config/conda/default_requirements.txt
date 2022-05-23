@@ -1,0 +1,7 @@
+ipykernel
+scipy
+numpy
+matplotlib
+pysam
+samtools
+jupyter
