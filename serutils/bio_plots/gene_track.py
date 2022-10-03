@@ -5,6 +5,7 @@ from matplotlib         import pyplot as plt
 from matplotlib.patches import FancyBboxPatch
 from matplotlib.ticker  import FuncFormatter
 
+
 def read_genes(fnam):
     """
     Parse file from biomart-ensembl
@@ -123,7 +124,7 @@ def get_text_width(txt_obj, renderer, axe):
 
 
 def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
-               extra_fig_heigth=0, highlight=None):
+               extra_fig_height=0, highlight=None, font_size=8):
     """
     plot genes through their exons/introns.
 
@@ -131,7 +132,11 @@ def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
     :param crm: Chromosome name of the wanted region
     :param beg: start position of the wanted region
     :param end: end position of the wanted region
-    :param None axe: Matplotlib Axe object
+    :param None axe: matplotlib Axe object
+    :param gene_type_color: dictionary of colors corresponding to gene types
+    :param 0 extra_fig_height: for very small plots
+    :param highlight: set of gene names to be highlighted
+    :param 8 font_size: base font size to write gene name (use zero to skip naming)
     """
     if not gene_type_color:
         gene_type_color = {'protein_coding'                     : 'firebrick',
@@ -243,12 +248,12 @@ def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
             t = axe.text(genes[g]['exons'][0][0],
                      num + 0.1,
                      genes[g]['Gene name'] + ('>' if genes[g]['Strand'] == '1' else '<'),
-                         color=color, size=9, weight="bold")
+                         color=color, size=font_size * 1.1, weight="bold")
         else:
             t = axe.text(genes[g]['exons'][0][0],
                      num + 0.1,
                      genes[g]['Gene name'] + ('>' if genes[g]['Strand'] == '1' else '<'),
-                         color=color, size=8)
+                         color=color, size=font_size)
         w = get_text_width(t, renderer, axe)
         pos.append((b, max(b + w, e), num))
         for b, e in genes[g]['exons']:
@@ -288,5 +293,5 @@ def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
     xlabel = '{}: {:,}-{:,}'.format(('' if 'chr' in crm else 'chr') + crm, beg if beg else 1, end)
     axe.set_xlabel(xlabel)
     if input_axe is None:
-        fig.set_figheight(0.3 + nrows / 3. + extra_fig_heigth)
+        fig.set_figheight(0.3 + nrows / 3. + extra_fig_height)
     return nrows
