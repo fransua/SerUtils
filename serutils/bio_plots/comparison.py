@@ -46,7 +46,8 @@ def scatter_venns(intersections, unions, sizes1, sizes2, xcoords,
        are equal to the size of the element divided by twice the maximum size observed.
     :param None colors: list of pair of values to color each element in each comparison
     :param None axe: matplolib Axe object
-    :param 'Jaccard-index' metric: metric to be used forthe Y coordinate
+    :param 'Jaccard-index' metric: metric to be used for the Y coordinate 
+       (Jaccard-index or Overlap-coefficient)
     :param None title: plot title
     :param None scale_range: list of values to show examples of circle sizes in the legend.
        By default percentiles 1, 50 and 99 of the size distribution will be used.
@@ -110,17 +111,19 @@ def scatter_venns(intersections, unions, sizes1, sizes2, xcoords,
     axe1.set_position((0.1, 0.1, axe1_size, axe1_size))
     axe1.set_title(title)
     # size legend
+    size = xmax - xmin
     axe2_height = 0.17
+    axe_ratio = axe1_size / axe2_height
     axe2.set_position((0.71, 0.05, 0.17, axe2_height))
     for n, s in enumerate(scale_range if scale_range else np.percentile(
         list(sizes1) + list(sizes2), (1, 50, 99))):
-        y = np.linspace(ylim[0], ylim[1], 15)[n*5 + 1]
+        y = np.linspace(ylim[0], ylim[1], 15)[n * 5 + 1]
         r = (axe1_size / axe2_height) * (s / factor / np.pi)**0.5
-        e = Ellipse((-0.2, y), r * Xratio * 2, r * 2,
-                    facecolor='none', edgecolor='k', linewidth=1)
+        e = Ellipse((xmin + size / 5, y), r * Xratio * 2, r * 2,
+                    facecolor='none', edgecolor='k', linewidth=1, clip_on=False)
         axe2.text(0.9, y, f'{s // 1000}K', va='center')
         axe2.add_artist(e)
-    axe2.set_xlim(-2.5, 2.5)
+    axe2.set_xlim(-size / 2, size / 2)
     axe2.set_ylim(ylim)
     axe2.set_axis_off()
 

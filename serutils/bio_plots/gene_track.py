@@ -225,8 +225,10 @@ def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
     pos = []
     for g in sorted([g for g in genes if
                      genes[g]['Chromosome/scaffold name'] == crm and
-                     genes[g]['exons'][0][0] >= beg and
-                     genes[g]['exons'][-1][1] <= end],
+                     genes[g]['exons'][-1][1] >= beg and
+                     genes[g]['exons'][0][0] <= end],
+                    #  genes[g]['exons'][0][0] >= beg and
+                    #  genes[g]['exons'][-1][1] <= end],
                     key=lambda x: genes[x]['exons'][0][0]):
 
         # begs = tuple([b for b, _ in genes[g]['exons']])
@@ -244,13 +246,16 @@ def plot_genes(genes, crm, beg, end, gene_type_color=None, axe=None,
         except ValueError:
             num = 0
         color = gene_type_color.get(genes[g]['Gene type'], 'red')
+        y_text = max(beg, genes[g]['exons'][0][0])
+        y_text = min(end, y_text)
         if g in highlight:
-            t = axe.text(genes[g]['exons'][0][0],
+            print(f"Found highligted gene: {g}")
+            t = axe.text(y_text,
                      num + 0.1,
                      genes[g]['Gene name'] + ('>' if genes[g]['Strand'] == '1' else '<'),
-                         color=color, size=font_size * 1.1, weight="bold")
+                         color=color, size=font_size * 1.3, weight="bold")
         else:
-            t = axe.text(genes[g]['exons'][0][0],
+            t = axe.text(y_text,
                      num + 0.1,
                      genes[g]['Gene name'] + ('>' if genes[g]['Strand'] == '1' else '<'),
                          color=color, size=font_size)
