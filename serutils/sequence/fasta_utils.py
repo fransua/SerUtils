@@ -11,14 +11,19 @@ def parse_fasta(f_name, verbose=True):
        as values (sequence in upper case)
     """
     genome_seq = OrderedDict()
+    seq = ''
+    header = None
     for line in open(f_name):
         if line.startswith('>'):
+            if header is not None:
+                genome_seq[header] = seq
             header = line[1:].split()[0]
-            genome_seq[header] = ''
+            seq = ''
             if verbose:
                 print('Parsing %s' % (header))
             continue
-        genome_seq[header] += line.rstrip()
+        seq += line.rstrip()
+    genome_seq[header] = seq
     return genome_seq
 
 
